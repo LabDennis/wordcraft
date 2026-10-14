@@ -954,6 +954,16 @@ pub(super) fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             }
             ok || cancel
         }
+        Dialog::PdfImportReport { warnings } => {
+            ui.set_max_width(460.0);
+            ui.label(tl!("The PDF is now an editable copy. Save it as a new document; the original PDF has not changed."));
+            ui.add_space(8.0);
+            for warning in warnings {
+                ui.label(tl!(warning.as_str()));
+            }
+            ui.add_space(8.0);
+            ui.button(tl!("OK")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Escape))
+        }
         Dialog::About { tab } => {
             ui.set_width(660.0);
             let names = ["About", "Contributors", "Models"].map(|n| tl!(n).to_string());
