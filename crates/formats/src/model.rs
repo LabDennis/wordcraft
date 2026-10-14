@@ -797,6 +797,14 @@ pub fn flow_paras(doc: &Document, p: &Paragraph) -> Vec<Para> {
 /// insertion and deletion marks.
 fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
     let (kind, list) = para_kind(doc, p);
+    let spacing = Spacing {
+        before: p.props.space_before,
+        after: p.props.space_after,
+        line: p.props.line_spacing,
+        left: p.props.indent_left,
+        right: p.props.indent_right,
+        first: p.props.indent_first,
+    };
     let mut done: Vec<Para> = Vec::new();
     let mut out = Para {
         kind,
@@ -804,7 +812,7 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
         align: p.props.align,
         page_break: p.props.page_break_before.unwrap_or(false),
         inlines: Vec::new(),
-        spacing: Spacing::default(),
+        spacing,
         borders: None,
         section: None,
     };
@@ -824,16 +832,8 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
             if c == PAGE_BREAK {
                 if !hidden {
                     out.push_text(&std::mem::take(&mut buf), &f);
-                    let next = Para {
-                        kind,
-                        list: None,
-                        align: p.props.align,
-                        page_break: true,
-                        inlines: Vec::new(),
-                        spacing: Spacing::default(),
-                        borders: None,
-                        section: None,
-                    };
+                    let next =
+                        Para { kind, list: None, align: p.props.align, page_break: true, inlines: Vec::new(), spacing, borders: None, section: None };
                     let prev = std::mem::replace(&mut out, next);
                     if prev.inlines.is_empty() {
                         out.page_break |= prev.page_break;
