@@ -48,13 +48,21 @@ fn parse(bytes: &[u8]) -> Option<CoreProps> {
     // Offsets are relative to the property set. Bound each value by the next property so a
     // forged string length cannot read another property's bytes as part of the title.
     let property = |id: u32| -> Option<&[u8]> {
-        let entry = table.chunks_exact(8).find(|entry| u32_at(entry, 0) == Some(id))?;
+        let entry = table.as_chunks::<8>().0.iter().find(|entry| u32_at(entry.as_slice(), 0) == Some(id))?.as_slice();
         let start = u32_at(entry, 4)? as usize;
         if start < table_end || !start.is_multiple_of(4) {
             return None;
         }
-        let end =
-            table.chunks_exact(8).filter_map(|e| u32_at(e, 4)).map(|n| n as usize).filter(|n| *n > start).min().unwrap_or(set.len()).min(set.len());
+        let end = table
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .filter_map(|e| u32_at(e, 4))
+            .map(|n| n as usize)
+            .filter(|n| *n > start)
+            .min()
+            .unwrap_or(set.len())
+            .min(set.len());
         set.get(start..end)
     };
     let cp = property(1)?;
@@ -91,7 +99,7 @@ fn text(value: &[u8], codepage: u16) -> Option<String> {
         if !bytes.len().is_multiple_of(2) {
             return None;
         }
-        let units = bytes.chunks_exact(2).map(|b| u16::from_le_bytes([b[0], b[1]])).take_while(|u| *u != 0);
+        let units = bytes.as_chunks::<2>().0.iter().map(|b| u16::from_le_bytes([b[0], b[1]])).take_while(|u| *u != 0);
         Some(char::decode_utf16(units).map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER)).collect())
     } else {
         let bytes = bytes.split(|b| *b == 0).next().unwrap_or_default();
