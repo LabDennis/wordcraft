@@ -7232,3 +7232,70 @@ fn vertical_align_command_sets_justified() {
         assert_eq!(serde_json::to_value(crate::cmd::page::sect(&s)).unwrap()["valign"], json!(name));
     }
 }
+
+/// #1938: a rich clipboard may carry selected rows/cells without the enclosing table.
+#[test]
+fn paste_html_table_fragments_keep_cells_and_undo() {
+    for html in [
+        "<table><tr><th>Über</th><td></td></tr><tr><td>A</td><td><b>B</b></td></tr></table>",
+        "<tr><th>Über</th><td></td></tr><tr><td>A</td><td><b>B</b></td></tr>",
+        "<tbody><tr><th>Über</th><td></td></tr><tr><td>A</td><td><b>B</b></td></tr></tbody>",
+    ] {
+        for command in ["edit.paste", "edit.pasteSpecial"] {
+            let mut s = s();
+            run(&mut s, command, json!({"as": "html", "html": html, "text": "Über\t\nA\tB"}));
+            let table = s.doc.body.iter().find_map(|b| b.as_table()).expect("clipboard structure stays editable");
+            assert_eq!(table.rows.len(), 2, "{html}");
+            assert_eq!(table.rows[0].cells.len(), 2);
+            assert_eq!(table.rows[1].cells.len(), 2);
+            assert_eq!(table.rows[0].cells[0].blocks[0].as_para().unwrap().text, "Über");
+            assert_eq!(table.rows[0].cells[1].blocks[0].as_para().unwrap().text, "");
+            assert_eq!(table.rows[1].cells[1].blocks[0].as_para().unwrap().text, "B");
+            run(&mut s, "edit.undo", json!({}));
+            assert_eq!(text(&s), "");
+            assert!(!s.doc.body.iter().any(|b| b.as_table().is_some()));
+        }
+    }
+}
+
+#[test]
+fn paste_html_cells_preserves_spans_and_text_only_stays_text() {
+    let html = " \n<!--selection--> <TH colspan='2'>Ü &amp; &lt;x&gt;</TH><TD><b>B</b></TD>";
+    let mut s = s();
+    run(&mut s, "edit.paste", json!({"html":html,"text":"Ü & <x>\tB"}));
+    let table = s.doc.body.iter().find_map(|b| b.as_table()).unwrap();
+    assert_eq!(table.rows.len(), 1);
+    let first = &table.rows[0].cells[0];
+    assert_eq!(first.span(), 2);
+    assert_eq!(first.blocks[0].as_para().unwrap().text, "Ü & <x>");
+    run(&mut s, "edit.undo", json!({}));
+    run(&mut s, "edit.pasteText", json!({"html":html,"text":"Ü & <x>\tB"}));
+    assert!(!s.doc.body.iter().any(|b| b.as_table().is_some()));
+    assert_eq!(text(&s), "Ü & <x>\tB");
+}
+
+#[test]
+fn paste_cf_html_selected_rows_survive_docx_without_unselected_context() {
+    let row = "<tr><td>Selected</td><td><b>Ö</b></td></tr>";
+    let head = "Version:0.9\r\nStartHTML:HHHHHHHHHH\r\nEndHTML:IIIIIIIIII\r\nStartFragment:SSSSSSSSSS\r\nEndFragment:EEEEEEEEEE\r\n";
+    let before = "<html><body><p>Unselected before</p><table>";
+    let after = "</table><p>Unselected after</p></body></html>";
+    let start = head.len() + before.len();
+    let end = start + row.len();
+    let cf = format!("{head}{before}{row}{after}")
+        .replace("HHHHHHHHHH", &format!("{:010}", head.len()))
+        .replace("IIIIIIIIII", &format!("{:010}", end + after.len()))
+        .replace("SSSSSSSSSS", &format!("{start:010}"))
+        .replace("EEEEEEEEEE", &format!("{end:010}"));
+    let mut s = s();
+    run(&mut s, "edit.paste", json!({"html":cf,"text":"Selected\tÖ"}));
+    let back = wordcraft_docx::read(&wordcraft_docx::write(&s.doc).unwrap()).unwrap();
+    let table = back.body.iter().find_map(|b| b.as_table()).unwrap();
+    assert_eq!(table.rows.len(), 1);
+    assert_eq!(table.rows[0].cells.len(), 2);
+    assert_eq!(table.rows[0].cells[0].blocks[0].as_para().unwrap().text, "Selected");
+    let p = table.rows[0].cells[1].blocks[0].as_para().unwrap();
+    assert_eq!(p.text, "Ö");
+    assert_eq!(p.props_of_char(0).bold, Some(true));
+    assert!(!back.shown_text(StoryRef::Body).contains("Unselected"));
+}

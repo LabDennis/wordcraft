@@ -136,7 +136,7 @@ fn paste_special(s: &mut Session, v: &Value) -> CmdResult {
             return Ok(r);
         }
         "formatted" => s.clipboard.clone().ok_or_else(|| CmdError::Failed("the clipboard is empty".into()))?,
-        "html" => adopt(s, wordcraft_formats::html::import(html_fragment(&src))),
+        "html" => adopt(s, import_clipboard_html(&src)),
         _ => adopt(s, wordcraft_formats::rtf::import(src.as_bytes()).map_err(|e| CmdError::Failed(format!("bad RTF: {e}")))?),
     };
     insert(s, frag)?;
@@ -165,6 +165,30 @@ pub fn html_fragment(html: &str) -> &str {
     html.find('<').and_then(|i| html.get(i..)).unwrap_or("")
 }
 
+/// A clipboard selection can begin with a row or cell: the surrounding table isn't part of
+/// the selected HTML (including a CF_HTML fragment). Supply only its missing structural context.
+/// Keep plain text and complete documents on their existing paths; don't guess tables from tabs.
+fn import_clipboard_html(html: &str) -> Document {
+    let html = html_fragment(html);
+    let mut start = html.trim_start();
+    while let Some(comment) = start.strip_prefix("<!--") {
+        let Some((_, rest)) = comment.split_once("-->") else { break };
+        start = rest.trim_start();
+    }
+    let tag = start.strip_prefix('<').and_then(|s| s.split(|c: char| c.is_ascii_whitespace() || matches!(c, '>' | '/')).next()).unwrap_or("");
+    let wrapper = if ["tr", "thead", "tbody", "tfoot"].iter().any(|name| tag.eq_ignore_ascii_case(name)) {
+        Some(("<table>", "</table>"))
+    } else if ["td", "th"].iter().any(|name| tag.eq_ignore_ascii_case(name)) {
+        Some(("<table><tr>", "</tr></table>"))
+    } else {
+        None
+    };
+    match wrapper {
+        Some((before, after)) => wordcraft_formats::html::import(&format!("{before}{html}{after}")),
+        None => wordcraft_formats::html::import(html),
+    }
+}
+
 /// Whether an imported document has anything to paste: text, a table, or a picture it carries.
 fn has_content(d: &Document) -> bool {
     d.body.iter().any(|b| match &**b {
@@ -178,7 +202,7 @@ fn has_content(d: &Document) -> bool {
 /// [`MAX_PASTE_BYTES`], or it holds nothing to paste (the caller pastes the text then).
 pub fn rich_fragment(s: &mut Session, v: &Value) -> Option<Fragment> {
     let fits = |k: &str| p::str(v, k).filter(|t| !t.trim().is_empty() && t.len() <= MAX_PASTE_BYTES);
-    let doc = fits("html").map(|html| wordcraft_formats::html::import(html_fragment(html)));
+    let doc = fits("html").map(import_clipboard_html);
     let doc = match doc.filter(has_content) {
         Some(d) => d,
         None => {
