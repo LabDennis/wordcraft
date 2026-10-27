@@ -1,6 +1,9 @@
 # WordCraft user guide
 
-[Deutsch](usage-de.md) · [Project README](../../README.md)
+[Deutsch](usage-de.md) · [All languages / translate](README.md) · [Project README](../../README.md)
+
+English is the source text; German is the initial example translation. Further languages can
+follow the same structure (see the language index).
 
 This guide collects everyday workflows and keyboard shortcuts. English command names are used
 so you can find the same actions in the ribbon or command search; the interface may translate them.
@@ -418,5 +421,5 @@ need a systematic walkthrough. Existing topic pages remain authoritative for the
 are currently mostly English. Planned capabilities in roadmap/parity pages are not instructions
 for available features.
 
-Contributors: keep both language versions aligned and verify behavior against the implementation;
+Contributors: keep the English guide and existing translations aligned and verify behavior against the implementation;
 see [AGENTS.md](../../AGENTS.md#user-documentation).

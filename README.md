@@ -69,7 +69,7 @@
   <a href="#license-and-credits">License and credits</a>
 </p>
 
-**User guide and keyboard shortcuts:** [English](docs/usage/usage.md) · [Deutsch](docs/usage/usage-de.md)
+**User guide and keyboard shortcuts:** [English](docs/usage/usage.md) · [Deutsch](docs/usage/usage-de.md) · [All languages / translate](docs/usage/README.md)
 
 ## A tour
 

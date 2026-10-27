@@ -1,6 +1,9 @@
 # WordCraft – Bedienungsanleitung
 
-[English](usage.md) · [Projekt-README](../../README.md)
+[English](usage.md) · [Alle Sprachen / Übersetzen](README.md) · [Projekt-README](../../README.md)
+
+Englisch ist die Ausgangsfassung; Deutsch dient als erste Beispielübersetzung. Weitere Sprachen
+sind nach demselben Aufbau willkommen (siehe Sprachindex).
 
 Diese Anleitung bündelt alltägliche Abläufe und Tastenkürzel. Englische Befehlsnamen bleiben zur
 Orientierung im Menüband und in der Befehlssuche erhalten; die Oberfläche kann sie übersetzen.
@@ -426,5 +429,5 @@ Werkzeug- und Dialoggesten benötigen noch einen systematischen Durchgang. Vorha
 bleiben für ihre Details maßgeblich und sind derzeit überwiegend englisch. Geplante Fähigkeiten
 in Roadmap-/Paritätsseiten sind keine Bedienungsanleitung für bereits verfügbare Funktionen.
 
-Für Beitragende: Beide Sprachfassungen synchron halten und das Verhalten am Quellcode prüfen;
+Für Beitragende: Englische Anleitung und vorhandene Übersetzungen synchron halten und das Verhalten am Quellcode prüfen;
 siehe [AGENTS.md](../../AGENTS.md#user-documentation).

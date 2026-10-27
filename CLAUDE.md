@@ -4,9 +4,10 @@ WordCraft is a clean-room, open-source, Rust-native word processor targeting Mic
 
 ## User documentation
 
-Follow the [user-documentation rule in AGENTS.md](AGENTS.md#user-documentation): keep
-[English](docs/usage/usage.md) and [German](docs/usage/usage-de.md) usage instructions in sync
-with user-facing feature and keyboard changes.
+Follow the [user-documentation rule in AGENTS.md](AGENTS.md#user-documentation): update the
+English usage guide and affected existing translations with user-facing feature and keyboard
+changes. German is the initial example; the [language index](docs/usage/README.md) explains
+how to add other languages.
 
 ## Start every session here
 1. Read `plan/STATUS.md` (current milestone, next task), then the task in `plan/execution-plan.md` and the relevant `plan/architecture.md` section. `plan/` is gitignored (local only); if it's missing, start from `ROADMAP.md`, `docs/gaps.md` and `docs/roadmap.md` (Current focus).
